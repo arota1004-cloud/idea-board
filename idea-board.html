@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idea Board - 아이디어 보드</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #FAF8F1;
+            --bg-secondary: #F8F6F1;
+            --text-primary: #2C3E50;
+            --text-secondary: #7F8C8D;
+            --accent-sage: #9CAF88;
+            --accent-terracotta: #D4876F;
+            --accent-slate: #8B9BA8;
+            --accent-warm: #F5EDD6;
+            --shadow-soft: rgba(44, 62, 80, 0.08);
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 사이드바 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid rgba(156, 175, 136, 0.2);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .sidebar-resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            cursor: ew-resize;
+            background: transparent;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        .sidebar-resizer:hover {
+            background: var(--accent-sage);
+        }
+
+        .sidebar-header {
+            padding: 0 20px 16px;
+            border-bottom: 1px solid rgba(156, 175, 136, 0.15);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .board-list {
+            padding: 0 12px;
+        }
+
+        .board-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .board-item:hover {
+            background: rgba(156, 175, 136, 0.1);
+        }
+
+        .board-item.active {
+            background: var(--accent-sage);
+            color: white;
+        }
+
+        .board-item-name {
+            flex: 1;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .board-item-name:focus {
+            outline: none;
+            cursor: text;
+        }
+
+        .board-item-delete {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .board-item:hover .board-item-delete {
+            opacity: 0.6;
+        }
+
+        .board-item-delete:hover {
+            opacity: 1 !important;
+        }
+
+        .add-board-btn {
+            margin: 12px;
+            padding: 10px 16px;
+            background: white;
+            border: 1px dashed rgba(156, 175, 136, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            width: calc(100% - 24px);
+            transition: all 0.2s;
+        }
+
+        .add-board-btn:hover {
+            background: var(--accent-warm);
+            border-color: var(--accent-sage);
+            color: var(--text-primary);
+        }
+
+        /* 상단 바 */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            height: 60px;
+            background: rgba(248, 246, 241, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(156, 175, 136, 0.2);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            z-index: 900;
+        }
+
+        .logo {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid rgba(156, 175, 136, 0.3);
+            border-radius: 20px;
+            background: white;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-sage);
+            box-shadow: 0 0 0 3px rgba(156, 175, 136, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .axis-config-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid rgba(156, 175, 136, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .axis-config-btn:hover {
+            background: var(--accent-sage);
+            color: white;
+            border-color: var(--accent-sage);
+        }
+
+        /* 캔버스 */
+        .canvas {
+            width: calc(100% - var(--sidebar-width));
+            height: calc(100vh - 60px);
+            margin-top: 60px;
+            margin-left: var(--sidebar-width);
+            position: relative;
+            cursor: grab;
+        }
+
+        .canvas.grabbing {
+            cursor: grabbing;
+        }
+
+        .canvas-content {
+            width: 10000px;
+            height: 10000px;
+            position: relative;
+            transform-origin: 0 0;
+        }
+
+        /* 축 라벨 */
+        .axis-labels {
+            position: absolute;
+            pointer-events: none;
+            z-index: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.6;
+            padding: 8px 12px;
+            background: rgba(248, 246, 241, 0.8);
+            border-radius: 6px;
+        }
+
+        .axis-label-x-left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .axis-label-x-right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .axis-label-y-top {
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%);
+        }
+
+        .axis-label-y-bottom {
+            left: 50%;
+            bottom: 80px;
+            transform: translateX(-50%);
+        }
+
+        /* 노트 카드 */
+        .note-node {
+            position: absolute;
+            cursor: move;
+            transition: transform 0.2s;
+        }
+
+        .note-node.dragging {
+            opacity: 0.8;
+            z-index: 1000;
+        }
+
+        .note-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px 24px;
+            box-shadow: 0 4px 20px var(--shadow-soft);
+            border: 1px solid rgba(156, 175, 136, 0.2);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        .note-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(44, 62, 80, 0.12);
+        }
+
+        .note-card.sage {
+            border-color: var(--accent-sage);
+            background: linear-gradient(135deg, rgba(156, 175, 136, 0.05) 0%, rgba(156, 175, 136, 0.02) 100%);
+        }
+
+        .note-card.terracotta {
+            border-color: var(--accent-terracotta);
+            background: linear-gradient(135deg, rgba(212, 135, 111, 0.05) 0%, rgba(212, 135, 111, 0.02) 100%);
+        }
+
+        .note-card.slate {
+            border-color: var(--accent-slate);
+            background: linear-gradient(135deg, rgba(139, 155, 168, 0.05) 0%, rgba(139, 155, 168, 0.02) 100%);
+        }
+
+        .note-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(156, 175, 136, 0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+            font-size: 1.2rem;
+            line-height: 1;
+            color: var(--text-secondary);
+        }
+
+        .note-card:hover .note-delete {
+            opacity: 1;
+        }
+
+        .note-delete:hover {
+            background: #d32f2f;
+            color: white;
+            border-color: #d32f2f;
+        }
+
+        .note-hashtags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .note-hashtag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            background: rgba(156, 175, 136, 0.15);
+            color: var(--accent-sage);
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .note-preview {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+            overflow: auto;
+            flex: 1;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .note-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            width: 16px;
+            height: 16px;
+            cursor: nwse-resize;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            border-right: 2px solid var(--text-secondary);
+            border-bottom: 2px solid var(--text-secondary);
+            opacity: 0.4;
+        }
+
+        .note-node:hover .resize-handle {
+            opacity: 1;
+        }
+
+        /* 컨트롤 버튼 */
+        .controls {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border: 1px solid rgba(156, 175, 136, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: var(--accent-sage);
+            color: white;
+            transform: scale(1.05);
+            border-color: var(--accent-sage);
+        }
+
+        .control-btn.add {
+            background: var(--accent-sage);
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .control-btn.add:hover {
+            background: #8A9E78;
+        }
+
+        /* 모달 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(44, 62, 80, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1500;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(156, 175, 136, 0.1);
+            color: var(--text-primary);
+        }
+
+        .modal-delete {
+            position: absolute;
+            top: 16px;
+            right: 56px;
+            background: none;
+            border: 1px solid rgba(211, 47, 47, 0.3);
+            color: #d32f2f;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-delete:hover {
+            background: #d32f2f;
+            color: white;
+        }
+
+        .modal-header {
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-meta {
+            margin-top: 12px;
+        }
+
+        .modal-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-connections {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .connection-tag {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            background: rgba(156, 175, 136, 0.1);
+            color: var(--accent-sage);
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .modal-edit-textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            background: transparent;
+            caret-color: var(--accent-sage);
+        }
+
+        .modal-edit-textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(156, 175, 136, 0.3);
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--accent-sage);
+            box-shadow: 0 0 0 3px rgba(156, 175, 136, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-sage);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #8A9E78;
+        }
+
+        .btn-secondary {
+            background: rgba(156, 175, 136, 0.1);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(156, 175, 136, 0.2);
+        }
+
+        /* 축 설정 모달 */
+        .axis-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            min-width: 500px;
+        }
+
+        .axis-input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .axis-input-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .axis-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .axis-input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(156, 175, 136, 0.3);
+            border-radius: 8px;
+            font-family: 'Pretendard', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .axis-input-group input:focus {
+            outline: none;
+            border-color: var(--accent-sage);
+            box-shadow: 0 0 0 3px rgba(156, 175, 136, 0.1);
+        }
+
+        /* 복사 메뉴 */
+        .copy-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            padding: 8px;
+            z-index: 2000;
+            min-width: 200px;
+        }
+
+        .copy-menu-header {
+            padding: 8px 12px;
+            fontSize: 0.85rem;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(156, 175, 136, 0.15);
+            margin-bottom: 4px;
+            color: var(--text-secondary);
+        }
+
+        .copy-menu-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .copy-menu-item:hover {
+            background: var(--accent-warm);
+        }
+
+        .copy-menu-item.current {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const INITIAL_NOTES = [
+            {
+                id: 1,
+                content: '#철학 한 잔과 함께 시작하는 하루. 창밖으로 보이는 햇살이 유난히 따스하다. #사색',
+                x: 200,
+                y: 150,
+                width: 280,
+                height: 200,
+                color: 'sage',
+                createdAt: new Date('2025-01-03T09:00:00')
+            },
+            {
+                id: 2,
+                content: '칸트의 순수이성비판을 다시 읽어야겠다. #철학 #사색',
+                x: 600,
+                y: 200,
+                width: 280,
+                height: 200,
+                color: 'terracotta',
+                createdAt: new Date('2025-01-03T10:30:00')
+            },
+            {
+                id: 3,
+                content: '생각을 시각화하는 도구 #아이디어보드 #디자인',
+                x: 1000,
+                y: 150,
+                width: 280,
+                height: 200,
+                color: 'slate',
+                createdAt: new Date('2025-01-03T14:15:00')
+            }
+        ];
+
+        function extractHashtags(text) {
+            const hashtags = text.match(/#[가-힣a-zA-Z0-9_]+/g) || [];
+            return [...new Set(hashtags.map(tag => tag.substring(1).toLowerCase()))];
+        }
+
+        function calculateSimilarity(tags1, tags2) {
+            if (tags1.length === 0 || tags2.length === 0) return 0;
+            const common = tags1.filter(tag => tags2.includes(tag)).length;
+            return common / Math.max(tags1.length, tags2.length);
+        }
+
+        function assignColorsBySimilarity(notes) {
+            if (notes.length === 0) return notes;
+            
+            const colors = ['sage', 'terracotta', 'slate'];
+            const clusters = [[], [], []];
+            
+            notes.forEach(note => {
+                const noteTags = extractHashtags(note.content);
+                const similarities = clusters.map(cluster => {
+                    if (cluster.length === 0) return 0;
+                    const avgSim = cluster.reduce((sum, otherNote) => {
+                        const otherTags = extractHashtags(otherNote.content);
+                        return sum + calculateSimilarity(noteTags, otherTags);
+                    }, 0) / cluster.length;
+                    return avgSim;
+                });
+                
+                let bestCluster = 0;
+                let maxSim = similarities[0];
+                for (let i = 1; i < similarities.length; i++) {
+                    if (similarities[i] > maxSim) {
+                        maxSim = similarities[i];
+                        bestCluster = i;
+                    }
+                }
+                
+                if (maxSim === 0) {
+                    bestCluster = clusters.findIndex(c => c.length === 0);
+                    if (bestCluster === -1) bestCluster = 0;
+                }
+                
+                note.color = colors[bestCluster];
+                clusters[bestCluster].push(note);
+            });
+            
+            return notes;
+        }
+
+        function calculateAutoConnections(notes) {
+            return notes.map(note => {
+                const noteTags = extractHashtags(note.content);
+                const connections = [];
+                
+                notes.forEach(otherNote => {
+                    if (note.id === otherNote.id) return;
+                    const otherTags = extractHashtags(otherNote.content);
+                    const commonTags = noteTags.filter(tag => otherTags.includes(tag));
+                    
+                    if (commonTags.length > 0) {
+                        connections.push({
+                            id: otherNote.id,
+                            hashtags: commonTags
+                        });
+                    }
+                });
+                
+                return { ...note, autoConnections: connections };
+            });
+        }
+
+        function IdeaBoard() {
+            const [boards, setBoards] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('ideaBoards');
+                    return saved ? JSON.parse(saved) : [
+                        { id: 1, name: '기본 보드', createdAt: new Date().toISOString() }
+                    ];
+                } catch (e) {
+                    return [{ id: 1, name: '기본 보드', createdAt: new Date().toISOString() }];
+                }
+            });
+            
+            const [currentBoardId, setCurrentBoardId] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('currentBoardId');
+                    return saved ? parseInt(saved) : 1;
+                } catch (e) {
+                    return 1;
+                }
+            });
+            
+            const [notes, setNotes] = useState(() => {
+                try {
+                    const saved = localStorage.getItem(`board_${currentBoardId}_notes`);
+                    let loadedNotes;
+                    
+                    if (saved) {
+                        loadedNotes = JSON.parse(saved).map(n => ({
+                            ...n,
+                            createdAt: new Date(n.createdAt)
+                        }));
+                    } else if (currentBoardId === 1) {
+                        loadedNotes = [...INITIAL_NOTES];
+                    } else {
+                        loadedNotes = [];
+                    }
+                    
+                    if (loadedNotes.length > 0) {
+                        loadedNotes = assignColorsBySimilarity(loadedNotes);
+                        loadedNotes = calculateAutoConnections(loadedNotes);
+                    }
+                    
+                    return loadedNotes;
+                } catch (e) {
+                    return currentBoardId === 1 ? [...INITIAL_NOTES] : [];
+                }
+            });
+            
+            const [scale, setScale] = useState(1);
+            const [position, setPosition] = useState({ x: 0, y: 0 });
+            const [isPanning, setIsPanning] = useState(false);
+            const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+            const [selectedNote, setSelectedNote] = useState(null);
+            const [modalStack, setModalStack] = useState([]);
+            const [isCreating, setIsCreating] = useState(false);
+            
+            const [searchQuery, setSearchQuery] = useState('');
+            const [filteredNotes, setFilteredNotes] = useState(notes);
+            
+            const [showAxisConfig, setShowAxisConfig] = useState(false);
+            const [axisLabels, setAxisLabels] = useState(() => {
+                try {
+                    const saved = localStorage.getItem(`board_${currentBoardId}_axisLabels`);
+                    return saved ? JSON.parse(saved) : {
+                        xLeft: '',
+                        xRight: '',
+                        yTop: '',
+                        yBottom: ''
+                    };
+                } catch (e) {
+                    return { xLeft: '', xRight: '', yTop: '', yBottom: '' };
+                }
+            });
+            
+            const [savedViewport, setSavedViewport] = useState({ scale: 1, position: { x: 0, y: 0 } });
+            
+            const [sidebarWidth, setSidebarWidth] = useState(() => {
+                const saved = localStorage.getItem('sidebarWidth');
+                return saved ? parseInt(saved) : 240;
+            });
+            
+            const [copyMenu, setCopyMenu] = useState(null);
+            const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+            
+            const [draggingNote, setDraggingNote] = useState(null);
+            const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+            
+            const [resizingNote, setResizingNote] = useState(null);
+            const [resizeStart, setResizeStart] = useState({ width: 0, height: 0, mouseX: 0, mouseY: 0 });
+            
+            const canvasRef = useRef(null);
+            const contentRef = useRef(null);
+
+            useEffect(() => {
+                document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
+            }, [sidebarWidth]);
+
+            useEffect(() => {
+                try {
+                    const saved = localStorage.getItem(`board_${currentBoardId}_notes`);
+                    let loadedNotes;
+                    
+                    if (saved) {
+                        loadedNotes = JSON.parse(saved).map(n => ({
+                            ...n,
+                            createdAt: new Date(n.createdAt)
+                        }));
+                    } else {
+                        loadedNotes = currentBoardId === 1 ? [...INITIAL_NOTES] : [];
+                    }
+                    
+                    if (loadedNotes.length > 0) {
+                        loadedNotes = assignColorsBySimilarity(loadedNotes);
+                        loadedNotes = calculateAutoConnections(loadedNotes);
+                    }
+                    
+                    setNotes(loadedNotes);
+                    setFilteredNotes(loadedNotes);
+                    setSearchQuery('');
+                    
+                    const savedAxisLabels = localStorage.getItem(`board_${currentBoardId}_axisLabels`);
+                    if (savedAxisLabels) {
+                        setAxisLabels(JSON.parse(savedAxisLabels));
+                    } else {
+                        setAxisLabels({ xLeft: '', xRight: '', yTop: '', yBottom: '' });
+                    }
+                } catch (e) {
+                    console.error('Failed to load board:', e);
+                }
+            }, [currentBoardId]);
+
+            useEffect(() => {
+                try {
+                    localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(notes));
+                } catch (e) {
+                    console.error('Failed to save notes:', e);
+                }
+            }, [notes, currentBoardId]);
+
+            useEffect(() => {
+                try {
+                    localStorage.setItem('ideaBoards', JSON.stringify(boards));
+                } catch (e) {
+                    console.error('Failed to save boards:', e);
+                }
+            }, [boards]);
+
+            useEffect(() => {
+                try {
+                    localStorage.setItem('currentBoardId', currentBoardId.toString());
+                } catch (e) {
+                    console.error('Failed to save current board:', e);
+                }
+            }, [currentBoardId]);
+
+            useEffect(() => {
+                if (!searchQuery.trim()) {
+                    setFilteredNotes(notes);
+                } else {
+                    const query = searchQuery.toLowerCase();
+                    const filtered = notes.filter(note => 
+                        note.content.toLowerCase().includes(query) ||
+                        extractHashtags(note.content).some(tag => tag.includes(query))
+                    );
+                    setFilteredNotes(filtered);
+                }
+            }, [searchQuery, notes]);
+
+            useEffect(() => {
+                if (!isResizingSidebar) return;
+                
+                const handleMouseMove = (e) => {
+                    const newWidth = Math.max(200, Math.min(500, e.clientX));
+                    setSidebarWidth(newWidth);
+                    document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
+                };
+                
+                const handleMouseUp = () => {
+                    setIsResizingSidebar(false);
+                    localStorage.setItem('sidebarWidth', sidebarWidth.toString());
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                
+                return () => {
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [isResizingSidebar, sidebarWidth]);
+
+            const handleAddBoard = () => {
+                const name = prompt('새 보드 이름:');
+                if (name && name.trim()) {
+                    const newBoard = {
+                        id: Date.now(),
+                        name: name.trim(),
+                        createdAt: new Date().toISOString()
+                    };
+                    setBoards([...boards, newBoard]);
+                    setCurrentBoardId(newBoard.id);
+                }
+            };
+
+            const handleRenameBoard = (boardId, newName) => {
+                if (newName && newName.trim()) {
+                    setBoards(boards.map(b => 
+                        b.id === boardId ? { ...b, name: newName.trim() } : b
+                    ));
+                }
+            };
+
+            const handleDeleteBoard = (boardId, e) => {
+                e.stopPropagation();
+                if (boards.length === 1) {
+                    alert('마지막 보드는 삭제할 수 없습니다.');
+                    return;
+                }
+                if (confirm('이 보드를 삭제하시겠어요?')) {
+                    const filtered = boards.filter(b => b.id !== boardId);
+                    setBoards(filtered);
+                    localStorage.removeItem(`board_${boardId}_notes`);
+                    localStorage.removeItem(`board_${boardId}_axisLabels`);
+                    if (currentBoardId === boardId) {
+                        setCurrentBoardId(filtered[0].id);
+                    }
+                }
+            };
+
+            const handleApplyAxes = () => {
+                setShowAxisConfig(false);
+                localStorage.setItem(`board_${currentBoardId}_axisLabels`, JSON.stringify(axisLabels));
+            };
+
+            const handleCopyToBoard = (noteId, targetBoardId) => {
+                const noteToCopy = notes.find(n => n.id === noteId);
+                if (!noteToCopy) return;
+                
+                const savedTargetNotes = localStorage.getItem(`board_${targetBoardId}_notes`);
+                let targetNotes = savedTargetNotes ? JSON.parse(savedTargetNotes) : [];
+                
+                const copiedNote = {
+                    ...noteToCopy,
+                    id: Date.now(),
+                    createdAt: new Date()
+                };
+                
+                targetNotes.push(copiedNote);
+                localStorage.setItem(`board_${targetBoardId}_notes`, JSON.stringify(targetNotes));
+                
+                setCopyMenu(null);
+                const targetBoard = boards.find(b => b.id === targetBoardId);
+                alert(`"${targetBoard?.name}" 보드로 복사되었습니다.`);
+            };
+
+            const handleWheel = (e) => {
+                e.preventDefault();
+                const delta = -e.deltaY * 0.002;
+                setScale(prevScale => Math.min(Math.max(0.3, prevScale + delta), 2));
+            };
+
+            const handleMouseDown = (e) => {
+                if (e.target === canvasRef.current || e.target === contentRef.current) {
+                    setIsPanning(true);
+                    setPanStart({
+                        x: e.clientX - position.x,
+                        y: e.clientY - position.y
+                    });
+                }
+            };
+
+            const handleMouseMove = (e) => {
+                if (resizingNote) {
+                    const deltaX = (e.clientX - resizeStart.mouseX) / scale;
+                    const deltaY = (e.clientY - resizeStart.mouseY) / scale;
+                    
+                    const newWidth = Math.max(180, resizeStart.width + deltaX);
+                    const newHeight = Math.max(120, resizeStart.height + deltaY);
+                    
+                    setNotes(prevNotes => 
+                        prevNotes.map(note => 
+                            note.id === resizingNote.id 
+                                ? { ...note, width: newWidth, height: newHeight }
+                                : note
+                        )
+                    );
+                }
+                else if (draggingNote) {
+                    const newX = (e.clientX - dragOffset.x - position.x) / scale;
+                    const newY = (e.clientY - dragOffset.y - position.y) / scale;
+                    
+                    setNotes(prevNotes => 
+                        prevNotes.map(note => 
+                            note.id === draggingNote.id 
+                                ? { ...note, x: newX, y: newY }
+                                : note
+                        )
+                    );
+                }
+                else if (isPanning) {
+                    setPosition({
+                        x: e.clientX - panStart.x,
+                        y: e.clientY - panStart.y
+                    });
+                }
+            };
+
+            const handleMouseUp = () => {
+                if (draggingNote) {
+                    setDraggingNote(null);
+                    const recalculated = calculateAutoConnections(notes);
+                    setNotes(recalculated);
+                    localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(recalculated));
+                }
+                if (resizingNote) {
+                    setResizingNote(null);
+                    localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(notes));
+                }
+                setIsPanning(false);
+            };
+
+            const handleNoteMouseDown = (note, e) => {
+                e.stopPropagation();
+                
+                if (e.target.classList.contains('note-delete') || 
+                    e.target.classList.contains('resize-handle')) {
+                    return;
+                }
+                
+                setDraggingNote(note);
+                setDragOffset({ 
+                    x: e.clientX - note.x * scale - position.x,
+                    y: e.clientY - note.y * scale - position.y
+                });
+            };
+
+            const handleNoteDoubleClick = (note, e) => {
+                e.stopPropagation();
+                setSavedViewport({ scale, position: { ...position } });
+                setSelectedNote(note);
+            };
+
+            const handleNoteRightClick = (note, e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setCopyMenu({ noteId: note.id, x: e.clientX, y: e.clientY });
+            };
+
+            const handleResizeStart = (note, e) => {
+                e.stopPropagation();
+                setResizingNote(note);
+                setResizeStart({
+                    width: note.width || 280,
+                    height: note.height || 200,
+                    mouseX: e.clientX,
+                    mouseY: e.clientY
+                });
+            };
+
+            const handleOpenConnectedNote = (note) => {
+                setModalStack(prev => [...prev, note]);
+            };
+
+            const handleCloseModalFromStack = (index) => {
+                setModalStack(prev => prev.filter((_, i) => i !== index));
+            };
+
+            const handleDeleteNote = (noteId, e) => {
+                if (e) e.stopPropagation();
+                if (confirm('이 아이디어를 삭제하시겠어요?')) {
+                    const filtered = notes.filter(n => n.id !== noteId);
+                    const recalculated = calculateAutoConnections(filtered);
+                    setNotes(recalculated);
+                    setSelectedNote(null);
+                    setModalStack([]);
+                }
+            };
+
+            const handleCreateNote = (noteData) => {
+                const viewportCenterX = (-position.x + window.innerWidth / 2) / scale;
+                const viewportCenterY = (-position.y + window.innerHeight / 2) / scale;
+                
+                const newNote = {
+                    id: Date.now(),
+                    ...noteData,
+                    x: viewportCenterX - 140 + (Math.random() * 100 - 50),
+                    y: viewportCenterY - 80 + (Math.random() * 100 - 50),
+                    width: 280,
+                    height: 200,
+                    createdAt: new Date()
+                };
+                
+                const updatedNotes = calculateAutoConnections([...notes, newNote]);
+                setNotes(updatedNotes);
+                setIsCreating(false);
+            };
+
+            if (!boards || boards.length === 0) {
+                return (
+                    <div style={{ padding: '40px', textAlign: 'center' }}>
+                        <h2>보드가 없습니다</h2>
+                        <button 
+                            onClick={() => {
+                                localStorage.setItem('ideaBoards', JSON.stringify([
+                                    { id: 1, name: '기본 보드', createdAt: new Date().toISOString() }
+                                ]));
+                                window.location.reload();
+                            }}
+                            style={{
+                                marginTop: '16px',
+                                padding: '10px 20px',
+                                background: '#9CAF88',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            기본 보드 생성
+                        </button>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    <div className="sidebar">
+                        <div 
+                            className="sidebar-resizer"
+                            onMouseDown={() => setIsResizingSidebar(true)}
+                        />
+                        <div className="sidebar-header">
+                            <div className="sidebar-title">Boards</div>
+                        </div>
+                        <div className="board-list">
+                            {boards.map(board => (
+                                <div 
+                                    key={board.id}
+                                    className={`board-item ${board.id === currentBoardId ? 'active' : ''}`}
+                                    onClick={() => setCurrentBoardId(board.id)}
+                                >
+                                    <input
+                                        className="board-item-name"
+                                        value={board.name}
+                                        onChange={(e) => {
+                                            const newBoards = boards.map(b => 
+                                                b.id === board.id ? {...b, name: e.target.value} : b
+                                            );
+                                            setBoards(newBoards);
+                                        }}
+                                        onBlur={(e) => handleRenameBoard(board.id, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    {boards.length > 1 && (
+                                        <button
+                                            className="board-item-delete"
+                                            onClick={(e) => handleDeleteBoard(board.id, e)}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <button className="add-board-btn" onClick={handleAddBoard}>
+                            + New Board
+                        </button>
+                    </div>
+
+                    <div className="top-bar">
+                        <div className="logo">Idea Board</div>
+                        
+                        <div className="search-box">
+                            <span className="search-icon">⌕</span>
+                            <input 
+                                type="text"
+                                className="search-input"
+                                placeholder="아이디어 검색..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        
+                        <button 
+                            className="axis-config-btn"
+                            onClick={() => setShowAxisConfig(true)}
+                        >
+                            축 설정
+                        </button>
+                    </div>
+                    
+                    <div 
+                        ref={canvasRef}
+                        className={`canvas ${isPanning ? 'grabbing' : ''}`}
+                        onWheel={handleWheel}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                    >
+                        {axisLabels.xLeft && (
+                            <div className="axis-labels axis-label-x-left">{axisLabels.xLeft}</div>
+                        )}
+                        {axisLabels.xRight && (
+                            <div className="axis-labels axis-label-x-right">{axisLabels.xRight}</div>
+                        )}
+                        {axisLabels.yTop && (
+                            <div className="axis-labels axis-label-y-top">{axisLabels.yTop}</div>
+                        )}
+                        {axisLabels.yBottom && (
+                            <div className="axis-labels axis-label-y-bottom">{axisLabels.yBottom}</div>
+                        )}
+                        
+                        <div 
+                            ref={contentRef}
+                            className="canvas-content"
+                            style={{
+                                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`
+                            }}
+                        >
+                            {filteredNotes.map(note => {
+                                const hashtags = extractHashtags(note.content);
+                                return (
+                                <div
+                                    key={note.id}
+                                    className={`note-node ${draggingNote?.id === note.id ? 'dragging' : ''}`}
+                                    style={{
+                                        left: `${note.x}px`,
+                                        top: `${note.y}px`,
+                                        width: `${note.width || 280}px`,
+                                        height: `${note.height || 200}px`
+                                    }}
+                                    onMouseDown={(e) => handleNoteMouseDown(note, e)}
+                                    onDoubleClick={(e) => handleNoteDoubleClick(note, e)}
+                                    onContextMenu={(e) => handleNoteRightClick(note, e)}
+                                >
+                                    <div className={`note-card ${note.color}`}>
+                                        <button
+                                            className="note-delete"
+                                            onClick={(e) => handleDeleteNote(note.id, e)}
+                                            title="삭제"
+                                        >
+                                            ×
+                                        </button>
+                                        
+                                        {hashtags.length > 0 && (
+                                            <div className="note-hashtags">
+                                                {hashtags.slice(0, 3).map(tag => (
+                                                    <span key={tag} className="note-hashtag">
+                                                        #{tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        <div className="note-preview">{note.content}</div>
+                                        <div className="note-time">
+                                            {note.createdAt.toLocaleString('ko-KR', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </div>
+                                        <div 
+                                            className="resize-handle"
+                                            onMouseDown={(e) => handleResizeStart(note, e)}
+                                            title="크기 조절"
+                                        />
+                                    </div>
+                                </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="controls">
+                        <button 
+                            className="control-btn"
+                            onClick={() => setScale(Math.max(0.3, scale - 0.1))}
+                            title="축소"
+                        >
+                            −
+                        </button>
+                        <button 
+                            className="control-btn"
+                            onClick={() => setScale(Math.min(2, scale + 0.1))}
+                            title="확대"
+                        >
+                            +
+                        </button>
+                        <button 
+                            className="control-btn add"
+                            onClick={() => setIsCreating(true)}
+                            title="새 아이디어"
+                        >
+                            +
+                        </button>
+                    </div>
+
+                    {selectedNote && (
+                        <NoteModal 
+                            note={selectedNote} 
+                            notes={notes}
+                            currentBoardId={currentBoardId}
+                            onClose={() => setSelectedNote(null)}
+                            onDelete={handleDeleteNote}
+                            onOpenNote={handleOpenConnectedNote}
+                            zIndex={1000}
+                        />
+                    )}
+
+                    {modalStack.map((note, index) => (
+                        <NoteModal 
+                            key={`${note.id}-${index}`}
+                            note={note} 
+                            notes={notes}
+                            currentBoardId={currentBoardId}
+                            onClose={() => handleCloseModalFromStack(index)}
+                            onDelete={handleDeleteNote}
+                            onOpenNote={handleOpenConnectedNote}
+                            zIndex={1100 + index * 100}
+                        />
+                    ))}
+
+                    {showAxisConfig && (
+                        <div className="modal-overlay" onClick={() => setShowAxisConfig(false)}>
+                            <div className="axis-modal" onClick={e => e.stopPropagation()}>
+                                <h2 style={{ marginBottom: '8px', fontSize: '1.3rem' }}>좌표 축 설정</h2>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                                    아이디어를 배치할 기준 축을 설정하세요
+                                </p>
+                                
+                                <div className="axis-input-row">
+                                    <div className="axis-input-group">
+                                        <label>X축 왼쪽</label>
+                                        <input 
+                                            type="text"
+                                            value={axisLabels.xLeft}
+                                            onChange={(e) => setAxisLabels({...axisLabels, xLeft: e.target.value})}
+                                            placeholder="예: 철학"
+                                        />
+                                    </div>
+                                    <div className="axis-input-group">
+                                        <label>X축 오른쪽</label>
+                                        <input 
+                                            type="text"
+                                            value={axisLabels.xRight}
+                                            onChange={(e) => setAxisLabels({...axisLabels, xRight: e.target.value})}
+                                            placeholder="예: 과학"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="axis-input-row">
+                                    <div className="axis-input-group">
+                                        <label>Y축 상단</label>
+                                        <input 
+                                            type="text"
+                                            value={axisLabels.yTop}
+                                            onChange={(e) => setAxisLabels({...axisLabels, yTop: e.target.value})}
+                                            placeholder="예: 감성"
+                                        />
+                                    </div>
+                                    <div className="axis-input-group">
+                                        <label>Y축 하단</label>
+                                        <input 
+                                            type="text"
+                                            value={axisLabels.yBottom}
+                                            onChange={(e) => setAxisLabels({...axisLabels, yBottom: e.target.value})}
+                                            placeholder="예: 이성"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                                    <button 
+                                        className="btn btn-secondary" 
+                                        onClick={() => setShowAxisConfig(false)}
+                                        style={{ flex: 1 }}
+                                    >
+                                        취소
+                                    </button>
+                                    <button 
+                                        className="btn btn-primary" 
+                                        onClick={handleApplyAxes}
+                                        style={{ flex: 1 }}
+                                    >
+                                        적용
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {copyMenu && (
+                        <div className="modal-overlay" onClick={() => setCopyMenu(null)}>
+                            <div 
+                                className="copy-menu" 
+                                style={{ left: copyMenu.x, top: copyMenu.y }}
+                                onClick={e => e.stopPropagation()}
+                            >
+                                <div className="copy-menu-header">
+                                    다른 보드로 복사
+                                </div>
+                                {boards.map(board => (
+                                    <div
+                                        key={board.id}
+                                        className={`copy-menu-item ${board.id === currentBoardId ? 'current' : ''}`}
+                                        onClick={() => {
+                                            if (board.id !== currentBoardId) {
+                                                handleCopyToBoard(copyMenu.noteId, board.id);
+                                            }
+                                        }}
+                                    >
+                                        {board.name}
+                                        {board.id === currentBoardId && ' (현재)'}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {isCreating && (
+                        <CreateNoteModal 
+                            notes={notes}
+                            onClose={() => setIsCreating(false)}
+                            onSave={handleCreateNote}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        function NoteModal({ note, notes, currentBoardId, onClose, onDelete, onOpenNote, zIndex = 1000 }) {
+            const [editContent, setEditContent] = useState(note.content);
+            const textareaRef = useRef(null);
+            const saveTimeoutRef = useRef(null);
+            
+            const connectedNotesData = (note.autoConnections || []).map(conn => ({
+                ...notes.find(n => n.id === conn.id),
+                hashtags: conn.hashtags
+            })).filter(n => n.id);
+            
+            const noteHashtags = extractHashtags(note.content);
+
+            useEffect(() => {
+                setTimeout(() => {
+                    if (textareaRef.current) {
+                        textareaRef.current.focus();
+                        const length = textareaRef.current.value.length;
+                        textareaRef.current.setSelectionRange(length, length);
+                    }
+                }, 100);
+            }, []);
+
+            useEffect(() => {
+                if (editContent !== note.content) {
+                    if (saveTimeoutRef.current) {
+                        clearTimeout(saveTimeoutRef.current);
+                    }
+                    
+                    saveTimeoutRef.current = setTimeout(() => {
+                        const updatedNotes = notes.map(n => 
+                            n.id === note.id ? { ...n, content: editContent } : n
+                        );
+                        localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(updatedNotes));
+                    }, 1000);
+                }
+                
+                return () => {
+                    if (saveTimeoutRef.current) {
+                        clearTimeout(saveTimeoutRef.current);
+                    }
+                };
+            }, [editContent]);
+
+            const handleClose = () => {
+                const updatedNotes = notes.map(n => 
+                    n.id === note.id ? { ...n, content: editContent } : n
+                );
+                localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(updatedNotes));
+                onClose();
+            };
+            
+            return (
+                <div className="modal-overlay" onClick={handleClose} style={{ zIndex }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <button className="modal-close" onClick={handleClose}>×</button>
+                        <button 
+                            className="modal-delete" 
+                            onClick={() => onDelete(note.id)}
+                            title="삭제"
+                        >
+                            삭제
+                        </button>
+                        
+                        <div className="modal-header">
+                            <div className="modal-meta">
+                                <span className="modal-time">
+                                    {note.createdAt.toLocaleString('ko-KR', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
+                                {noteHashtags.length > 0 && (
+                                    <div className="modal-connections" style={{ marginTop: '8px' }}>
+                                        {noteHashtags.map(tag => (
+                                            <span key={tag} className="connection-tag">
+                                                #{tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <textarea
+                            ref={textareaRef}
+                            className="modal-edit-textarea"
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            placeholder="아이디어를 입력하세요... (#해시태그로 연결)"
+                        />
+                        
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', opacity: 0.7 }}>
+                            자동 저장됨
+                        </div>
+                        
+                        {connectedNotesData.length > 0 && (
+                            <div style={{ marginTop: '32px', padding: '20px', background: 'var(--accent-warm)', borderRadius: '12px' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '12px', color: 'var(--text-primary)' }}>
+                                    연결된 아이디어
+                                </div>
+                                {connectedNotesData.map(cn => (
+                                    <div 
+                                        key={cn.id} 
+                                        onClick={() => onOpenNote(cn)}
+                                        style={{ 
+                                            marginBottom: '12px', 
+                                            fontSize: '0.85rem', 
+                                            color: 'var(--text-secondary)',
+                                            cursor: 'pointer',
+                                            padding: '12px',
+                                            background: 'rgba(255, 255, 255, 0.5)',
+                                            borderRadius: '8px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+                                            e.currentTarget.style.transform = 'translateX(4px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.5)';
+                                            e.currentTarget.style.transform = 'translateX(0)';
+                                        }}
+                                    >
+                                        <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontWeight: '500' }}>
+                                            {cn.content}
+                                        </div>
+                                        <div style={{ fontSize: '0.7rem', marginTop: '4px', opacity: 0.7 }}>
+                                            공통 태그: {cn.hashtags.map(t => `#${t}`).join(', ')}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function CreateNoteModal({ notes, onClose, onSave }) {
+            const [content, setContent] = useState('');
+            const colors = ['sage', 'terracotta', 'slate'];
+            const color = colors[notes.length % 3];
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!content.trim()) return;
+                
+                onSave({ content, color });
+            };
+
+            return (
+                <div className="modal-overlay" onClick={onClose}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <button className="modal-close" onClick={onClose}>×</button>
+                        
+                        <div className="modal-header">
+                            <h1 className="modal-title">새로운 아이디어</h1>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                                #해시태그를 사용하면 관련 아이디어와 자동으로 연결돼요
+                            </p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="form-group">
+                                <label className="form-label">내용</label>
+                                <textarea
+                                    className="form-textarea"
+                                    value={content}
+                                    onChange={e => setContent(e.target.value)}
+                                    placeholder="떠오른 아이디어를 자유롭게 적어보세요... (#해시태그로 연결)"
+                                    autoFocus
+                                    style={{ minHeight: '300px' }}
+                                />
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                                    예시: #프로젝트 기획 중 #디자인 아이디어
+                                </div>
+                            </div>
+
+                            <div className="form-actions">
+                                <button type="button" className="btn btn-secondary" onClick={onClose}>
+                                    취소
+                                </button>
+                                <button type="submit" className="btn btn-primary">
+                                    추가
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error('React Error:', error, errorInfo);
+            }
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Pretendard, sans-serif' }}>
+                            <h1 style={{ color: '#d32f2f' }}>오류가 발생했습니다</h1>
+                            <p style={{ color: '#666', marginTop: '16px' }}>{this.state.error?.message}</p>
+                            <button 
+                                onClick={() => {
+                                    localStorage.clear();
+                                    window.location.reload();
+                                }}
+                                style={{
+                                    marginTop: '24px',
+                                    padding: '12px 24px',
+                                    background: '#9CAF88',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '1rem'
+                                }}
+                            >
+                                초기화 후 새로고침
+                            </button>
+                        </div>
+                    );
+                }
+
+                return this.props.children;
+            }
+        }
+
+        ReactDOM.render(
+            <ErrorBoundary>
+                <IdeaBoard />
+            </ErrorBoundary>,
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
