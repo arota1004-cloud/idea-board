@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Idea Board - 아이디어 보드</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,7 +39,6 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow: hidden;
-            touch-action: none;
         }
 
         .app-container {
@@ -49,7 +48,7 @@
             overflow: hidden;
         }
 
-        /* 사이드바 - 반응형 */
+        /* 사이드바 */
         .sidebar {
             position: fixed;
             left: 0;
@@ -115,7 +114,6 @@
             background: transparent;
             transition: background 0.2s;
             z-index: 10;
-            display: none;
         }
 
         .sidebar-resizer:hover {
@@ -221,7 +219,7 @@
             color: var(--text-primary);
         }
 
-        /* 상단 바 - 반응형 */
+        /* 상단 바 */
         .top-bar {
             position: absolute;
             top: 0;
@@ -302,7 +300,7 @@
             border-color: var(--accent-sage);
         }
 
-        /* 캔버스 - 반응형 */
+        /* 캔버스 */
         .canvas {
             width: calc(100% - var(--sidebar-width));
             height: calc(100vh - 60px);
@@ -311,7 +309,7 @@
             position: relative;
             cursor: grab;
             transition: all 0.3s ease;
-            touch-action: none;
+            overflow: hidden;
         }
 
         .sidebar.collapsed ~ .top-bar ~ .canvas {
@@ -330,41 +328,47 @@
             transform-origin: 0 0;
         }
 
-        /* 축 라벨 */
+        /* 축 라벨 - 고정 위치 */
         .axis-labels {
-            position: absolute;
+            position: fixed;
             pointer-events: none;
-            z-index: 500;
+            z-index: 800;
             color: var(--text-secondary);
             font-size: 0.9rem;
             font-weight: 500;
             opacity: 0.6;
             padding: 8px 12px;
-            background: rgba(248, 246, 241, 0.8);
+            background: rgba(248, 246, 241, 0.9);
             border-radius: 6px;
+            backdrop-filter: blur(4px);
         }
 
         .axis-label-x-left {
-            left: 20px;
-            top: 50%;
+            left: calc(var(--sidebar-width) + 20px);
+            top: calc(60px + 50%);
             transform: translateY(-50%);
+            transition: left 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .top-bar ~ .canvas .axis-label-x-left {
+            left: 60px;
         }
 
         .axis-label-x-right {
             right: 20px;
-            top: 50%;
+            top: calc(60px + 50%);
             transform: translateY(-50%);
         }
 
         .axis-label-y-top {
             left: 50%;
-            top: 20px;
+            top: 80px;
             transform: translateX(-50%);
         }
 
         .axis-label-y-bottom {
             left: 50%;
-            bottom: 80px;
+            bottom: 100px;
             transform: translateX(-50%);
         }
 
@@ -372,7 +376,6 @@
         .note-node {
             position: absolute;
             cursor: move;
-            transition: transform 0.2s;
             touch-action: none;
         }
 
@@ -433,10 +436,10 @@
             font-size: 1.2rem;
             line-height: 1;
             color: var(--text-secondary);
+            z-index: 10;
         }
 
-        .note-card:hover .note-delete,
-        .note-node:active .note-delete {
+        .note-card:hover .note-delete {
             opacity: 1;
         }
 
@@ -488,6 +491,7 @@
             cursor: nwse-resize;
             opacity: 0;
             transition: opacity 0.2s;
+            z-index: 10;
         }
 
         .resize-handle::after {
@@ -502,8 +506,7 @@
             opacity: 0.4;
         }
 
-        .note-node:hover .resize-handle,
-        .note-node:active .resize-handle {
+        .note-node:hover .resize-handle {
             opacity: 1;
         }
 
@@ -555,7 +558,7 @@
             background: #8A9E78;
         }
 
-        /* 모달 - 반응형 */
+        /* 모달 */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -833,25 +836,34 @@
         /* 모바일 최적화 */
         @media (max-width: 768px) {
             .sidebar {
-                width: 280px;
+                width: 80%;
+                max-width: 280px;
                 --sidebar-width: 280px;
             }
 
             .sidebar.collapsed {
-                transform: translateX(-240px);
+                transform: translateX(calc(-100% + 0px));
             }
 
             .sidebar-tab {
-                right: -40px;
+                right: auto;
+                left: calc(100% - 0px);
+                border-left: 1px solid rgba(156, 175, 136, 0.2);
+                border-right: none;
+                border-radius: 0 8px 8px 0;
+            }
+
+            .sidebar-resizer {
+                display: none;
             }
 
             .top-bar {
                 padding: 0 12px;
-                left: 280px;
+                left: 0;
             }
 
             .sidebar.collapsed ~ .top-bar {
-                left: 40px;
+                left: 0;
             }
 
             .logo {
@@ -863,7 +875,7 @@
             }
 
             .search-input {
-                font-size: 16px; /* iOS zoom 방지 */
+                font-size: 16px;
             }
 
             .axis-config-btn {
@@ -872,17 +884,35 @@
             }
 
             .canvas {
-                width: calc(100% - 280px);
-                margin-left: 280px;
+                width: 100%;
+                margin-left: 0;
             }
 
             .sidebar.collapsed ~ .top-bar ~ .canvas {
-                width: calc(100% - 40px);
-                margin-left: 40px;
+                width: 100%;
+                margin-left: 0;
+            }
+
+            /* 축 라벨 모바일 */
+            .axis-label-x-left {
+                left: 20px;
+                top: calc(60px + 50%);
             }
 
             .note-card {
                 padding: 16px 20px;
+            }
+
+            .note-delete {
+                opacity: 1;
+                width: 32px;
+                height: 32px;
+            }
+
+            .resize-handle {
+                opacity: 1;
+                width: 24px;
+                height: 24px;
             }
 
             .controls {
@@ -892,13 +922,13 @@
             }
 
             .control-btn {
-                width: 48px;
-                height: 48px;
-                font-size: 1.2rem;
+                width: 56px;
+                height: 56px;
+                font-size: 1.4rem;
             }
 
             .control-btn.add {
-                font-size: 1.5rem;
+                font-size: 1.8rem;
             }
 
             .modal-content {
@@ -928,57 +958,22 @@
             }
 
             .axis-input-group input {
-                font-size: 16px; /* iOS zoom 방지 */
+                font-size: 16px;
             }
 
             .form-textarea {
-                font-size: 16px; /* iOS zoom 방지 */
+                font-size: 16px;
             }
 
             .modal-edit-textarea {
-                font-size: 16px; /* iOS zoom 방지 */
+                font-size: 16px;
             }
         }
 
-        /* 터치 디바이스 최적화 */
-        @media (hover: none) and (pointer: coarse) {
-            .note-delete {
-                opacity: 0.3;
-            }
-
-            .note-card:active .note-delete {
-                opacity: 1;
-            }
-
-            .board-item-delete {
-                opacity: 0.3;
-            }
-
-            .board-item:active .board-item-delete {
-                opacity: 1;
-            }
-
-            .resize-handle {
-                opacity: 0.3;
-            }
-
-            .note-node:active .resize-handle {
-                opacity: 1;
-            }
-        }
-
-        /* 데스크톱에서만 리사이저 표시 */
+        /* 데스크톱 전용 */
         @media (min-width: 769px) {
-            .sidebar-resizer {
-                display: block;
-            }
-
             .sidebar-tab {
                 display: none;
-            }
-
-            .sidebar.collapsed {
-                transform: translateX(0);
             }
         }
     </style>
@@ -1174,10 +1169,7 @@
                 return saved ? parseInt(saved) : 240;
             });
             
-            const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-                // 모바일은 기본 접힘
-                return window.innerWidth <= 768;
-            });
+            const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
             
             const [copyMenu, setCopyMenu] = useState(null);
             const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -1188,9 +1180,10 @@
             const [resizingNote, setResizingNote] = useState(null);
             const [resizeStart, setResizeStart] = useState({ width: 0, height: 0, mouseX: 0, mouseY: 0 });
             
-            // 터치 이벤트 지원
-            const [touchStart, setTouchStart] = useState(null);
-            const [lastTouchEnd, setLastTouchEnd] = useState(0);
+            // 터치 이벤트
+            const [touchStartTime, setTouchStartTime] = useState(0);
+            const [touchStartPos, setTouchStartPos] = useState(null);
+            const [longPressTimer, setLongPressTimer] = useState(null);
             
             const canvasRef = useRef(null);
             const contentRef = useRef(null);
@@ -1294,9 +1287,11 @@
                 };
             }, [isResizingSidebar, sidebarWidth]);
 
-            // 사이드바 hover 효과 (데스크톱)
+            // 데스크톱 호버 (769px 이상만)
             useEffect(() => {
-                if (window.innerWidth > 768 && sidebarRef.current) {
+                if (window.innerWidth <= 768) return;
+                
+                if (sidebarRef.current) {
                     const handleMouseEnter = () => {
                         if (sidebarCollapsed) {
                             setSidebarCollapsed(false);
@@ -1306,7 +1301,6 @@
                     const handleMouseLeave = (e) => {
                         const rect = sidebarRef.current.getBoundingClientRect();
                         if (e.clientX < rect.left || e.clientX > rect.right) {
-                            // 마우스가 사이드바 영역을 완전히 벗어났을 때만 접기
                             setTimeout(() => {
                                 setSidebarCollapsed(true);
                             }, 300);
@@ -1404,63 +1398,6 @@
                 }
             };
 
-            const handleTouchStart = (e) => {
-                if (e.touches.length === 1) {
-                    const touch = e.touches[0];
-                    setTouchStart({ x: touch.clientX, y: touch.clientY });
-                    
-                    // 더블탭 감지
-                    const now = Date.now();
-                    if (now - lastTouchEnd < 300) {
-                        // 더블탭 - 확대/축소 토글
-                        setScale(prevScale => prevScale === 1 ? 1.5 : 1);
-                    }
-                    setLastTouchEnd(now);
-                } else if (e.touches.length === 2) {
-                    // 핀치 줌 준비
-                    const touch1 = e.touches[0];
-                    const touch2 = e.touches[1];
-                    const distance = Math.hypot(
-                        touch2.clientX - touch1.clientX,
-                        touch2.clientY - touch1.clientY
-                    );
-                    setTouchStart({ distance, scale });
-                }
-            };
-
-            const handleTouchMove = (e) => {
-                if (!touchStart) return;
-                
-                if (e.touches.length === 1 && !draggingNote) {
-                    // 패닝
-                    const touch = e.touches[0];
-                    const deltaX = touch.clientX - touchStart.x;
-                    const deltaY = touch.clientY - touchStart.y;
-                    
-                    setPosition({
-                        x: position.x + deltaX,
-                        y: position.y + deltaY
-                    });
-                    setTouchStart({ x: touch.clientX, y: touch.clientY });
-                } else if (e.touches.length === 2) {
-                    // 핀치 줌
-                    const touch1 = e.touches[0];
-                    const touch2 = e.touches[1];
-                    const distance = Math.hypot(
-                        touch2.clientX - touch1.clientX,
-                        touch2.clientY - touch1.clientY
-                    );
-                    
-                    const scaleChange = distance / touchStart.distance;
-                    const newScale = Math.min(Math.max(0.3, touchStart.scale * scaleChange), 2);
-                    setScale(newScale);
-                }
-            };
-
-            const handleTouchEnd = () => {
-                setTouchStart(null);
-            };
-
             const handleMouseMove = (e) => {
                 if (resizingNote) {
                     const deltaX = (e.clientX - resizeStart.mouseX) / scale;
@@ -1538,11 +1475,87 @@
                 setCopyMenu({ noteId: note.id, x: e.clientX, y: e.clientY });
             };
 
-            const handleNoteLongPress = (note, e) => {
-                // 모바일 롱프레스로 복사 메뉴 열기
-                e.preventDefault();
+            // 터치 이벤트 핸들러
+            const handleNoteTouchStart = (note, e) => {
                 const touch = e.touches[0];
-                setCopyMenu({ noteId: note.id, x: touch.clientX, y: touch.clientY });
+                const now = Date.now();
+                
+                setTouchStartTime(now);
+                setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+                
+                // 롱프레스 타이머
+                const timer = setTimeout(() => {
+                    setCopyMenu({ noteId: note.id, x: touch.clientX, y: touch.clientY });
+                    setTouchStartTime(0);
+                }, 500);
+                
+                setLongPressTimer(timer);
+                
+                // 드래그 시작
+                if (!e.target.classList.contains('note-delete') && 
+                    !e.target.classList.contains('resize-handle')) {
+                    setDraggingNote(note);
+                    setDragOffset({
+                        x: touch.clientX - note.x * scale - position.x,
+                        y: touch.clientY - note.y * scale - position.y
+                    });
+                }
+            };
+
+            const handleNoteTouchMove = (note, e) => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
+                }
+                
+                if (draggingNote && draggingNote.id === note.id) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const newX = (touch.clientX - dragOffset.x - position.x) / scale;
+                    const newY = (touch.clientY - dragOffset.y - position.y) / scale;
+                    
+                    setNotes(prevNotes => 
+                        prevNotes.map(n => 
+                            n.id === note.id 
+                                ? { ...n, x: newX, y: newY }
+                                : n
+                        )
+                    );
+                }
+            };
+
+            const handleNoteTouchEnd = (note, e) => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    setLongPressTimer(null);
+                }
+                
+                const now = Date.now();
+                const timeDiff = now - touchStartTime;
+                
+                // 짧은 탭 = 모달 열기
+                if (timeDiff < 200 && touchStartPos) {
+                    const touch = e.changedTouches[0];
+                    const moveDist = Math.hypot(
+                        touch.clientX - touchStartPos.x,
+                        touch.clientY - touchStartPos.y
+                    );
+                    
+                    if (moveDist < 10) {
+                        setSavedViewport({ scale, position: { ...position } });
+                        setSelectedNote(note);
+                    }
+                }
+                
+                if (draggingNote && draggingNote.id === note.id) {
+                    setDraggingNote(null);
+                    const recalculated = calculateAutoConnections(notes);
+                    setNotes(recalculated);
+                    localStorage.setItem(`board_${currentBoardId}_notes`, JSON.stringify(recalculated));
+                }
+                
+                setTouchStartTime(0);
+                setTouchStartPos(null);
             };
 
             const handleResizeStart = (note, e) => {
@@ -1551,8 +1564,8 @@
                 setResizeStart({
                     width: note.width || 280,
                     height: note.height || 200,
-                    mouseX: e.clientX,
-                    mouseY: e.clientY
+                    mouseX: e.clientX || e.touches[0].clientX,
+                    mouseY: e.clientY || e.touches[0].clientY
                 });
             };
 
@@ -1703,9 +1716,6 @@
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseUp}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
                     >
                         {axisLabels.xLeft && (
                             <div className="axis-labels axis-label-x-left">{axisLabels.xLeft}</div>
@@ -1742,19 +1752,9 @@
                                     onMouseDown={(e) => handleNoteMouseDown(note, e)}
                                     onDoubleClick={(e) => handleNoteDoubleClick(note, e)}
                                     onContextMenu={(e) => handleNoteRightClick(note, e)}
-                                    onTouchStart={(e) => {
-                                        if (e.touches.length === 1) {
-                                            const longPressTimer = setTimeout(() => {
-                                                handleNoteLongPress(note, e);
-                                            }, 500);
-                                            e.target.dataset.longPressTimer = longPressTimer;
-                                        }
-                                    }}
-                                    onTouchEnd={(e) => {
-                                        if (e.target.dataset.longPressTimer) {
-                                            clearTimeout(parseInt(e.target.dataset.longPressTimer));
-                                        }
-                                    }}
+                                    onTouchStart={(e) => handleNoteTouchStart(note, e)}
+                                    onTouchMove={(e) => handleNoteTouchMove(note, e)}
+                                    onTouchEnd={(e) => handleNoteTouchEnd(note, e)}
                                 >
                                     <div className={`note-card ${note.color}`}>
                                         <button
@@ -1787,6 +1787,7 @@
                                         <div 
                                             className="resize-handle"
                                             onMouseDown={(e) => handleResizeStart(note, e)}
+                                            onTouchStart={(e) => handleResizeStart(note, e)}
                                             title="크기 조절"
                                         />
                                     </div>
